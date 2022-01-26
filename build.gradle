@@ -7,7 +7,6 @@ buildscript {
     }
     dependencies {
         classpath "com.android.tools.build:gradle:7.0.4"
-        compile files('/apps/libs/jsch-0.1.55.jar')
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
     }

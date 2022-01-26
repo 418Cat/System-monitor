@@ -80,6 +80,7 @@
             android:layout_marginStart="145dp"
             android:layout_marginTop="10dp"
             android:layout_marginEnd="145dp"
+            android:onClick="ssh"
             android:text="connect"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -131,7 +132,7 @@
         app:layout_constraintTop_toBottomOf="@+id/constraintLayout6">
 
         <EditText
-            android:id="@+id/editTextTextMultiLine"
+            android:id="@+id/output"
             android:layout_width="253dp"
             android:layout_height="281dp"
             android:layout_marginStart="73dp"
