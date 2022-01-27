@@ -1,18 +1,22 @@
 package com.example.systemmonitor;
-
 import androidx.appcompat.app.AppCompatActivity;
+
+import android.media.MediaCas;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
-import com.jcraft.*;
+import com.jcraft.jsch.*;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 public class MainActivity extends AppCompatActivity {
-    public SSH connection = new SSH();
+
+    public SSH connection;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -20,62 +24,76 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void ssh(View v){
+        connection = new SSH();
         String[] infos = {((TextView)findViewById(R.id.username)).getText().toString(), ((TextView)findViewById(R.id.hostname)).getText().toString(), ((TextView)findViewById(R.id.port)).getText().toString(), ((TextView)findViewById(R.id.password)).getText().toString()};
         TextView output = (TextView) findViewById(R.id.output);
-        connection.ssh(infos, output);
+        connection.infos = infos;
+        connection.input = (TextView)findViewById(R.id.input);
+        connection.output = (TextView)findViewById(R.id.output);
+        connection.ssh();
     }
 
     public void execute(View v){
-        connection.sendCommand(((TextView)findViewById(R.id.command)).toString());
+        connection.sendCommand();
     }
 
 }
 
-class SSH extends Thread {
+class SSH extends Thread{
 
-    private String[] infos = {};
-    private TextView output;
-    Channel channel = null;
+    public String[] infos;
+    public TextView output;
+    public TextView input;
+
+    private ChannelExec channel;
     private Session session;
-    private String response;
-    String command = null;
-    
     private Thread thread = new Thread() {
         @Override
-        public void run() {
-            try{
-                session = new JSch().getSession(infos[0], infos[1], Integer.parseInt(infos[2]));
-                session.setPassword(infos[3]);
+        public void run(){
+            try {
+
+                (session = new JSch().getSession(infos[0], infos[1], Integer.parseInt(infos[2]))).setPassword(infos[3]);
                 session.setConfig("StrictHostKeyChecking", "no");
                 session.connect();
-                channel = (ChannelExec) session.openChannel("exec");
-                output.setText("Connecté en ssh à " + infos[1]);
-                Log.d("SSH", "SUCCESS");
-                while(channel.isConnected()){
-                    if(command != null) {
-                        channel.setInputStream(new ByteArrayInputStream(command.getBytes()));
-                        command = null;
-                        output.setText(channel.getOutputStream().toString());
-                    }
-                    thread.sleep(100);
-                }
-            } catch(Exception e) {
+
+                Log.d("SSH", "CONNECTION SUCCESS");
+                output.setText(infos[0] + " connecté en ssh à " + infos[1]);
+
+            } catch (Exception e) {
+                Log.d("SSH", "CONNECTION FAILURE: " + e.toString());
                 output.setText(e.toString());
-                Log.d("SSH", e.toString());
-                Log.d("SSH", "FAILURE");
             }
         }
     };
 
-    public void ssh(String[] infos, TextView output){
-        this.infos = infos;
-        this.output = output;
+    public void ssh(){
         thread.start();
     }
-    public void sendCommand(String input){
-        if(!channel.isConnected()) return;
-        if(command.toLowerCase() == "exit"){channel.disconnect();return;}
-        command = input;
+    public void sendCommand(){
+        Thread t = new Thread(){
+            @Override
+            public void run(){
+                try {
+                    channel = (ChannelExec)session.openChannel("exec");
+                    channel.setCommand(input.getText().toString());
+                    ByteArrayOutputStream responseStream = new ByteArrayOutputStream();
+                    channel.setOutputStream(responseStream);
+                    channel.connect();
+
+                    while (channel.isConnected()) {
+                        Thread.sleep(100);
+                    }
+
+                    Log.d("SSH", new String(responseStream.toByteArray()));
+                    output.setText(new String(responseStream.toByteArray()));
+                    Log.d("SSH", "COMMAND SUCCESS");
+                } catch(Exception e){
+                    Log.d("SSH", "COMMAND FAILURE: " + e.toString());
+                    output.setText(e.toString());
+                }
+            }
+        };
+        t.start();
     }
 }
 

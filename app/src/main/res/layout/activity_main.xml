@@ -4,6 +4,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:clickable="true"
+    android:focusable="false"
+    android:focusableInTouchMode="false"
+    android:focusedByDefault="false"
     tools:context=".MainActivity"
     tools:layout_editor_absoluteX="-20dp"
     tools:layout_editor_absoluteY="-2dp">
@@ -97,7 +101,7 @@
         app:layout_constraintTop_toBottomOf="@+id/constraintLayout5">
 
         <EditText
-            android:id="@+id/command"
+            android:id="@+id/input"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="50dp"
@@ -121,7 +125,7 @@
             android:text="execute"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/command" />
+            app:layout_constraintTop_toBottomOf="@+id/input" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -134,14 +138,13 @@
 
         <EditText
             android:id="@+id/output"
-            android:layout_width="253dp"
-            android:layout_height="281dp"
-            android:layout_marginStart="73dp"
-            android:layout_marginTop="39dp"
-            android:layout_marginEnd="73dp"
-            android:ems="10"
-            android:gravity="start|top"
-            android:inputType="textMultiLine"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:clickable="false"
+            android:cursorVisible="false"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
