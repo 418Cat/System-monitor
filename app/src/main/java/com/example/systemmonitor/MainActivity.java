@@ -4,46 +4,43 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
+import android.widget.Switch;
 import android.widget.TextView;
 import com.jcraft.jsch.*;
 
 import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
     public SSH connection;
-    public String[][] translations = {{"English", "Username", "Hostname", "Port", "Password", "Connect", "Command", "Execute"}, {"Français", "Nom d'utilisateur", "Hôte", "Port", "Mot de passe", "Connection", "Commande", "Executer"}};
+    public Language language = new Language();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        setLanguages("Français");
     }
 
-    public void setLanguages(String language){
-        String[] translate = {};
-        for(String[] i:translations){
-            if(i[0] == language){
-                translate = i;
-                break;
-            }
-        }
-        ((TextView)findViewById(R.id.username)).setHint(translate[1]);
-        ((TextView)findViewById(R.id.hostname)).setHint(translate[2]);
-        ((TextView)findViewById(R.id.port)).setHint(translate[3]);
-        ((TextView)findViewById(R.id.password)).setHint(translate[4]);
-        ((TextView)findViewById(R.id.connect_button)).setText(translate[5]);
-        ((TextView)findViewById(R.id.input_text)).setHint(translate[6]);
-        ((TextView)findViewById(R.id.execute_button)).setText(translate[7]);
+    public void changeLang(String newLang){
+        language.lang = newLang;
+        ((TextView)findViewById(R.id.username)).setHint(language.translations.get(newLang)[0]);
+        ((TextView)findViewById(R.id.hostname)).setHint(language.translations.get(newLang)[1]);
+        ((TextView)findViewById(R.id.port)).setHint(language.translations.get(newLang)[2]);
+        ((TextView)findViewById(R.id.password)).setHint(language.translations.get(newLang)[3]);
+        ((TextView)findViewById(R.id.connect_button)).setText(language.translations.get(newLang)[4]);
+        ((TextView)findViewById(R.id.input_text)).setHint(language.translations.get(newLang)[5]);
+        ((TextView)findViewById(R.id.execute_button)).setText(language.translations.get(newLang)[6]);
     }
 
     public void ssh(View v){
         connection = new SSH();
-        String[] userInfo = {((TextView)findViewById(R.id.username)).getText().toString(), ((TextView)findViewById(R.id.hostname)).getText().toString(), ((TextView)findViewById(R.id.port)).getText().toString(), ((TextView)findViewById(R.id.password)).getText().toString()};
-        connection.userInfo = userInfo;
+        connection.userInfo = new String[]{((TextView)findViewById(R.id.username)).getText().toString(), ((TextView)findViewById(R.id.hostname)).getText().toString(), ((TextView)findViewById(R.id.port)).getText().toString(), ((TextView)findViewById(R.id.password)).getText().toString()};
         connection.input = (TextView)findViewById(R.id.input_text);
         connection.output = (TextView)findViewById(R.id.text_output);
+        connection.connect = (Button)findViewById(R.id.connect_button);
         connection.ssh();
     }
 
@@ -51,6 +48,25 @@ public class MainActivity extends AppCompatActivity {
         connection.sendCommand();
     }
 
+    public void onSwitch(View v){
+        if(v == (Switch)findViewById(R.id.language_switch)){
+            if (((Switch)findViewById(R.id.language_switch)).isChecked()){
+                changeLang("Français");
+            } else {
+                changeLang("English");
+            }
+        }
+    }
+
+}
+
+class Language {
+    public static Map<String, String[]> translations = new HashMap<String, String[]>();
+    public static String lang = "English";
+    public Language(){
+        translations.put("English", new String[]{"Username", "Hostname", "Port", "Password", "Connect", "Command", "Execute", "Disconnect"});
+        translations.put("Français", new String[]{"Nom d'utilisateur", "Hôte", "Port", "Mot de passe", "Connection", "Commande", "Executer", "Déconnection"});
+    }
 }
 
 class SSH extends Thread{
@@ -58,6 +74,7 @@ class SSH extends Thread{
     public String[] userInfo;
     public TextView output;
     public TextView input;
+    public Button connect;
 
     private ChannelExec channel;
     private Session session;
@@ -110,4 +127,6 @@ class SSH extends Thread{
         t.start();
     }
 }
+
+
 
