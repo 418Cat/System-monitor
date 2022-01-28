@@ -15,8 +15,8 @@ import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
-    public SSH connection;
-    public Language language = new Language();
+    public SSH connection = new SSH();
+    public static Language language = new Language();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,19 +64,20 @@ class Language {
     public static Map<String, String[]> translations = new HashMap<String, String[]>();
     public static String lang = "English";
     public Language(){
-        translations.put("English", new String[]{"Username", "Hostname", "Port", "Password", "Connect", "Command", "Execute", "Disconnect"});
-        translations.put("Français", new String[]{"Nom d'utilisateur", "Hôte", "Port", "Mot de passe", "Connection", "Commande", "Executer", "Déconnection"});
+        translations.put("English", new String[]{"Username", "Hostname", "Port", "Password", "Connect", "Command", "Execute", "Disconnect", "Could not send command, not connected"});
+        translations.put("Français", new String[]{"Nom d'utilisateur", "Hôte", "Port", "Mot de passe", "Connection", "Commande", "Executer", "Déconnection", "Impossible d'envoyer la commande lorsque non connecté"});
     }
 }
 
 class SSH extends Thread{
 
-    public String[] userInfo;
-    public TextView output;
-    public TextView input;
-    public Button connect;
+    public String[] userInfo = null;
+    public TextView output = null;
+    public TextView input = null;
+    public Button connect = null;
+    private boolean isConnected = false;
 
-    private ChannelExec channel;
+    private ChannelExec channel = null;
     private Session session;
     private Thread thread = new Thread() {
         @Override
@@ -89,10 +90,11 @@ class SSH extends Thread{
 
                 Log.d("SSH", "CONNECTION SUCCESS");
                 output.setText(userInfo[0] + " connecté en ssh à " + userInfo[1]);
-
+                isConnected = true;
             } catch (Exception e) {
                 Log.d("SSH", "CONNECTION FAILURE: " + e.toString());
                 output.setText(e.toString());
+                isConnected = false;
             }
         }
     };
@@ -101,30 +103,39 @@ class SSH extends Thread{
         thread.start();
     }
     public void sendCommand(){
-        Thread t = new Thread(){
-            @Override
-            public void run(){
-                try {
-                    channel = (ChannelExec)session.openChannel("exec");
-                    channel.setCommand(input.getText().toString());
-                    ByteArrayOutputStream responseStream = new ByteArrayOutputStream();
-                    channel.setOutputStream(responseStream);
-                    channel.connect();
+        if((session == null || !isConnected) && output!=null) {
+            Log.d("SSH", "COMMAND FAILURE: NOT CONNECTED");
+            output.setText(MainActivity.language.translations.get(MainActivity.language.lang)[8]);
+            return;
+        } else if(isConnected){
+            Thread t = new Thread(){
+                @Override
+                public void run(){
+                    try {
+                        channel = (ChannelExec)session.openChannel("exec");
+                        channel.setCommand(input.getText().toString());
+                        ByteArrayOutputStream responseStream = new ByteArrayOutputStream();
+                        channel.setOutputStream(responseStream);
+                        channel.connect();
 
-                    while (channel.isConnected()) {
-                        Thread.sleep(100);
+                        while (channel.isConnected()) {
+                            Thread.sleep(100);
+                        }
+                        isConnected = true;
+                        Log.d("SSH", new String(responseStream.toByteArray()));
+                        output.setText(new String(responseStream.toByteArray()));
+                        Log.d("SSH", "COMMAND SUCCESS");
+                    } catch(Exception e){
+                        Log.d("SSH", "COMMAND FAILURE: " + e.toString());
+                        output.setText(e.toString());
                     }
-
-                    Log.d("SSH", new String(responseStream.toByteArray()));
-                    output.setText(new String(responseStream.toByteArray()));
-                    Log.d("SSH", "COMMAND SUCCESS");
-                } catch(Exception e){
-                    Log.d("SSH", "COMMAND FAILURE: " + e.toString());
-                    output.setText(e.toString());
                 }
-            }
-        };
-        t.start();
+            };
+            t.start();
+        } else {
+            Log.d("SSH", "COMMAND FAILURE: OBJECT NOT INITIALIZED");
+            return;
+        }
     }
 }
 

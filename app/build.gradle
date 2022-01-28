@@ -35,6 +35,7 @@ dependencies {
     implementation files('libs/jsch-0.1.55.jar')
     implementation files('libs\\jsch-0.1.55.jar')
     implementation files('libs\\jsch-0.1.55.jar')
+    implementation files('libs/jsch-0.1.55.jar')
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
