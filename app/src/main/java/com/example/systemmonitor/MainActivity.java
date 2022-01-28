@@ -1,6 +1,7 @@
 package com.example.systemmonitor;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -30,17 +31,20 @@ public class MainActivity extends AppCompatActivity {
         ((TextView)findViewById(R.id.hostname)).setHint(language.translations.get(newLang)[1]);
         ((TextView)findViewById(R.id.port)).setHint(language.translations.get(newLang)[2]);
         ((TextView)findViewById(R.id.password)).setHint(language.translations.get(newLang)[3]);
-        ((TextView)findViewById(R.id.connect_button)).setText(language.translations.get(newLang)[4]);
+        if(connection.isConnected) {
+            ((TextView)findViewById(R.id.connect_button)).setText(language.translations.get(newLang)[7]);
+        } else {
+            ((TextView)findViewById(R.id.connect_button)).setText(language.translations.get(newLang)[4]);
+        }
         ((TextView)findViewById(R.id.input_text)).setHint(language.translations.get(newLang)[5]);
         ((TextView)findViewById(R.id.execute_button)).setText(language.translations.get(newLang)[6]);
     }
 
     public void ssh(View v){
-        connection = new SSH();
         connection.userInfo = new String[]{((TextView)findViewById(R.id.username)).getText().toString(), ((TextView)findViewById(R.id.hostname)).getText().toString(), ((TextView)findViewById(R.id.port)).getText().toString(), ((TextView)findViewById(R.id.password)).getText().toString()};
         connection.input = (TextView)findViewById(R.id.input_text);
         connection.output = (TextView)findViewById(R.id.text_output);
-        connection.connect = (Button)findViewById(R.id.connect_button);
+        connection.connectButton = (Button)findViewById(R.id.connect_button);
         connection.ssh();
     }
 
@@ -74,33 +78,43 @@ class SSH extends Thread{
     public String[] userInfo = null;
     public TextView output = null;
     public TextView input = null;
-    public Button connect = null;
-    private boolean isConnected = false;
+    public Button connectButton = null;
+    public boolean isConnected = false;
 
     private ChannelExec channel = null;
     private Session session;
-    private Thread thread = new Thread() {
-        @Override
-        public void run(){
-            try {
-
-                (session = new JSch().getSession(userInfo[0], userInfo[1], Integer.parseInt(userInfo[2]))).setPassword(userInfo[3]);
-                session.setConfig("StrictHostKeyChecking", "no");
-                session.connect();
-
-                Log.d("SSH", "CONNECTION SUCCESS");
-                output.setText(userInfo[0] + " connecté en ssh à " + userInfo[1]);
-                isConnected = true;
-            } catch (Exception e) {
-                Log.d("SSH", "CONNECTION FAILURE: " + e.toString());
-                output.setText(e.toString());
-                isConnected = false;
-            }
-        }
-    };
+    private Thread thread;
 
     public void ssh(){
-        thread.start();
+        if(!isConnected){
+            thread = new Thread(){
+                @Override
+                public void run(){
+                    try {
+                        (session = new JSch().getSession(userInfo[0], userInfo[1], Integer.parseInt(userInfo[2]))).setPassword(userInfo[3]);
+                        session.setConfig("StrictHostKeyChecking", "no");
+                        session.connect();
+
+                        Log.d("SSH", "CONNECTION SUCCESS");
+                        output.setText(userInfo[0] + " connecté en ssh à " + userInfo[1]);
+                        isConnected = true;
+                        connectButton.setBackgroundColor(Color.rgb(30, 200, 30));
+                        connectButton.setText(MainActivity.language.translations.get(MainActivity.language.lang)[7]);
+                    } catch (Exception e) {
+                        Log.d("SSH", "CONNECTION FAILURE: " + e.toString());
+                        output.setText(e.toString());
+                        isConnected = false;
+                    }
+                }
+            };
+            thread.start();
+        } else {
+            if(!thread.isInterrupted()) thread.interrupt();
+            isConnected = false;
+            connectButton.setBackgroundColor(Color.rgb(200, 200, 200));
+            connectButton.setText(MainActivity.language.translations.get(MainActivity.language.lang)[4]);
+            Log.d("SSH", "DISCONNECT SUCCESS");
+        }
     }
     public void sendCommand(){
         if((session == null || !isConnected) && output!=null) {
