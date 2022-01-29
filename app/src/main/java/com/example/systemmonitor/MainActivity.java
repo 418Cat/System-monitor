@@ -6,8 +6,13 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.RelativeLayout;
 import android.widget.Switch;
+import android.widget.TabWidget;
 import android.widget.TextView;
+
+import com.google.android.material.tabs.TabItem;
+import com.google.android.material.tabs.TabLayout;
 import com.jcraft.jsch.*;
 
 import java.io.ByteArrayOutputStream;
@@ -18,11 +23,13 @@ public class MainActivity extends AppCompatActivity {
 
     public SSH connection = new SSH();
     public static Language language = new Language();
+    public TabLayout mainTabs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mainTabs = (TabLayout)findViewById(R.id.mainTab);
     }
 
     public void changeLang(String newLang){
@@ -38,6 +45,9 @@ public class MainActivity extends AppCompatActivity {
         }
         ((TextView)findViewById(R.id.input_text)).setHint(language.translations.get(newLang)[5]);
         ((TextView)findViewById(R.id.execute_button)).setText(language.translations.get(newLang)[6]);
+        mainTabs.getTabAt(0).setText(language.translations.get(language.lang)[10]);
+        mainTabs.getTabAt(1).setText(language.translations.get(language.lang)[11]);
+        mainTabs.getTabAt(2).setText(language.translations.get(language.lang)[12]);
     }
 
     public void ssh(View v){
@@ -68,8 +78,8 @@ class Language {
     public static Map<String, String[]> translations = new HashMap<String, String[]>();
     public static String lang = "English";
     public Language(){
-        translations.put("English", new String[]{"Username", "Hostname", "Port", "Password", "Connect", "Command", "Execute", "Disconnect", "Could not send command, not connected"});
-        translations.put("Français", new String[]{"Nom d'utilisateur", "Hôte", "Port", "Mot de passe", "Connection", "Commande", "Executer", "Déconnection", "Impossible d'envoyer la commande lorsque non connecté"});
+        translations.put("English", new String[]{"Username", "Hostname", "Port", "Password", "Connect", /*5*/"Command", "Execute", "Disconnect", "Could not send command, not connected", "Please fill all the fields", /*10*/"SSH", "Monitor", "Settings"});
+        translations.put("Français", new String[]{"Nom d'utilisateur", "Hôte", "Port", "Mot de passe", "Connection", /*5*/"Commande", "Executer", "Déconnection", "Impossible d'envoyer la commande lorsque non connecté", "Il faut remplir tous les champs", /*10*/"SSH", "Moniteur", "Paramètres"});
     }
 }
 
@@ -94,20 +104,25 @@ class SSH extends Thread{
                         (session = new JSch().getSession(userInfo[0], userInfo[1], Integer.parseInt(userInfo[2]))).setPassword(userInfo[3]);
                         session.setConfig("StrictHostKeyChecking", "no");
                         session.connect();
-
                         Log.d("SSH", "CONNECTION SUCCESS");
-                        output.setText(userInfo[0] + " connecté en ssh à " + userInfo[1]);
                         isConnected = true;
-                        connectButton.setBackgroundColor(Color.rgb(30, 200, 30));
-                        connectButton.setText(MainActivity.language.translations.get(MainActivity.language.lang)[7]);
                     } catch (Exception e) {
                         Log.d("SSH", "CONNECTION FAILURE: " + e.toString());
-                        output.setText(e.toString());
                         isConnected = false;
+                        if(e.toString().contains("java.lang.NumberFormatException: For input string: \"\"")){
+                            output.setText(MainActivity.language.translations.get(MainActivity.language.lang)[9]);
+                        } else {
+                            output.setText(e.toString());
+                        }
                     }
                 }
             };
             thread.start();
+            if(isConnected){
+                output.setText(userInfo[0] + " connecté en ssh à " + userInfo[1]);
+                connectButton.setBackgroundColor(Color.rgb(30, 200, 30));
+                connectButton.setText(MainActivity.language.translations.get(MainActivity.language.lang)[7]);
+            }
         } else {
             if(!thread.isInterrupted()) thread.interrupt();
             isConnected = false;
